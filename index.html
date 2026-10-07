@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Auditoría de Volteo</title>
+<style>
+/* Layout: app de una columna para teléfono, 5 pestañas fijas abajo, tarjetas de vidrio sobre fondo aurora (Midnight Glass / Pearl Frost) */
+:root{
+  --bg:#0f172a; --card:rgba(30,41,66,.74); --solid:#16213a; --line:rgba(148,163,184,.18);
+  --fg:#e7ecf5; --muted:#94a3b8; --accent:#2dd4bf; --accent2:#6366f1;
+  --ok:#34d399; --okbg:rgba(52,211,153,.15); --warn:#fbbf24; --warnbg:rgba(251,191,36,.15);
+  --bad:#fb7185; --badbg:rgba(251,113,133,.16); --input:rgba(15,23,42,.62);
+  --shadow:0 10px 30px rgba(0,0,0,.35); --aur1:rgba(99,102,241,.22); --aur2:rgba(45,212,191,.16);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#f8fafc; --card:rgba(255,255,255,.88); --solid:#ffffff; --line:rgba(15,23,42,.10);
+  --fg:#0f172a; --muted:#5b6578; --accent:#0d9488; --accent2:#4f46e5;
+  --ok:#059669; --okbg:rgba(5,150,105,.10); --warn:#b45309; --warnbg:rgba(180,83,9,.10);
+  --bad:#e11d48; --badbg:rgba(225,29,72,.09); --input:#ffffff;
+  --shadow:0 8px 24px rgba(15,23,42,.08); --aur1:rgba(99,102,241,.10); --aur2:rgba(13,148,136,.08); color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f8fafc; --card:rgba(255,255,255,.88); --solid:#ffffff; --line:rgba(15,23,42,.10);
+  --fg:#0f172a; --muted:#5b6578; --accent:#0d9488; --accent2:#4f46e5;
+  --ok:#059669; --okbg:rgba(5,150,105,.10); --warn:#b45309; --warnbg:rgba(180,83,9,.10);
+  --bad:#e11d48; --badbg:rgba(225,29,72,.09); --input:#ffffff;
+  --shadow:0 8px 24px rgba(15,23,42,.08); --aur1:rgba(99,102,241,.10); --aur2:rgba(13,148,136,.08); color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);background-image:radial-gradient(60% 40% at 0% 0%,var(--aur1),transparent),radial-gradient(50% 40% at 100% 20%,var(--aur2),transparent);background-attachment:fixed;color:var(--fg);font:15px/1.45 var(--font);min-height:100vh;padding-block:0 100px}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:calc(env(safe-area-inset-top,0px) + 16px) 4px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:23px;margin:2px 0 0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:16px;margin:0}
+h3{font-size:14px;margin:0}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);min-width:0}
+.stack{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.02em;min-width:0}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--input);border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;min-width:0}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:650;border:0;border-radius:999px;padding:11px 18px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 6px 16px rgba(45,212,191,.22);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:var(--badbg);color:var(--bad);box-shadow:none}
+.btn.wa{background:#25d366;box-shadow:none;color:#052e16}
+.btn.sm{padding:7px 13px;font-size:13px}
+.btn.xs{padding:4px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--input);border:1px solid var(--line);border-radius:999px;padding:4px;gap:4px}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:8px 6px;cursor:pointer}
+.seg button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+.pill.ok{background:var(--okbg);color:var(--ok)} .pill.warn{background:var(--warnbg);color:var(--warn)} .pill.bad{background:var(--badbg);color:var(--bad)} .pill.pend{background:var(--input);color:var(--muted);border:1px solid var(--line)}
+.banner{border-radius:14px;padding:12px 14px;font-size:13px;background:var(--warnbg);color:var(--fg);border:1px solid var(--warn)}
+.banner b{color:var(--warn)}
+.banner.bad{background:var(--badbg);border-color:var(--bad)} .banner.bad b{color:var(--bad)}
+.hint{font-size:12.5px;color:var(--muted);background:var(--input);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+/* puntos */
+.slots{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.slot{font:inherit;text-align:left;cursor:pointer;border:1px solid var(--line);background:var(--input);color:var(--fg);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.slot .nm{font-weight:650;font-size:13.5px} .slot .dir{font-size:11.5px;color:var(--muted)}
+.slot .val{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums}
+.slot.ok{border-color:var(--ok);background:var(--okbg)} .slot.bad{border-color:var(--bad);background:var(--badbg)}
+.slot.sel{outline:2px solid var(--accent);outline-offset:1px}
+/* score */
+.scorebox{display:flex;align-items:center;gap:16px}
+.scorebox .t{display:flex;flex-direction:column;gap:4px;min-width:0}
+/* sensor */
+.cam{position:relative;border-radius:16px;overflow:hidden;background:#05070d;aspect-ratio:1/1;max-height:52vh;width:100%;max-width:100%;margin-inline:auto;border:1px solid var(--line)}
+.cam video,.cam canvas{position:absolute;inset:0;width:100%;height:100%}
+.cam video{object-fit:cover}
+.cam .msg{position:absolute;inset:auto 12px 12px 12px;text-align:center;color:#e7ecf5;font-size:13px;background:rgba(2,6,23,.6);border-radius:10px;padding:8px}
+.savebar{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:5;background:var(--solid);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
+.savebar .big{font-size:36px}
+.readout{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.big{font-family:var(--mono);font-size:46px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
+.big small{font-size:18px;color:var(--muted)}
+.canvasbox{position:relative;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--line)}
+canvas#cv{display:block;width:100%;touch-action:none}
+.dropzone{border:1.5px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+/* tabs */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;padding:6px 8px calc(env(safe-area-inset-bottom,0px) + 6px);background:var(--solid);border-top:1px solid var(--line);display:flex;justify-content:center;gap:2px;z-index:20}
+nav.tabs button{flex:1;max-width:150px;font:inherit;font-size:11.5px;font-weight:650;border:0;background:transparent;color:var(--muted);padding:6px 2px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button.on{color:var(--accent);background:var(--input)}
+nav.tabs .badge{position:absolute;top:2px;right:calc(50% - 22px);background:var(--bad);color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+/* kpis y gráficas */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{min-width:0}
+.kpi .n{font-family:var(--mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{font-family:var(--font);fill:var(--muted);font-size:11px}
+.chart .lbl{fill:var(--fg);font-weight:600}
+.chart .val{fill:var(--fg);font-family:var(--mono);font-size:11.5px;font-weight:600}
+.chart .hit{cursor:pointer}
+.chart .hit:hover rect.hl{fill:var(--input)}
+/* listas */
+.group{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.group:first-child{border-top:0;padding-top:0;margin-top:0}
+.recs{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.rec{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center}
+.rec img,.rec .noimg{width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:var(--input);cursor:pointer}
+.rec .meta{min-width:0}
+.rec .meta b{font-size:13.5px}
+.rec .meta div{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ang{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.old{opacity:.55}
+.modelc{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--input);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 11px;font-size:13px}
+.chip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 4px}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px}
+.check input{width:20px;height:20px}
+pre.msgbox{white-space:pre-wrap;font:12.5px/1.5 var(--mono);background:var(--input);border:1px solid var(--line);border-radius:12px;padding:12px;margin:0;max-height:240px;overflow:auto}
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:40;overflow-y:auto;padding-block:calc(env(safe-area-inset-top,0px) + 12px) 40px}
+.viewer{position:fixed;inset:0;background:rgba(2,6,23,.94);z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px}
+.viewer img{max-height:80vh;border-radius:12px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:13.5px;z-index:70;box-shadow:var(--shadow);max-width:90vw;text-align:center}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+.tbl td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.tbl th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+@media (max-width:440px){.kpis{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr 1fr}.big{font-size:40px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Proceso de incubación · Auditoría</div>
+      <h1>Ángulo de volteo</h1>
+    </div>
+    <span class="muted small" id="hoy"></span>
+  </header>
+  <div class="banner" id="secBanner" hidden style="margin-top:10px"></div>
+  <div class="banner bad" id="storeBanner" hidden style="margin-top:10px"></div>
+
+  <!-- ================= MEDIR ================= -->
+  <section id="tab-medir">
+    <div class="stack">
+      <div class="card">
+        <div class="grid2">
+          <label class="f">N.º de máquina<input id="maq" inputmode="text" placeholder="Ej. 12" autocomplete="off"></label>
+          <label class="f">Modelo<select id="modelo"></select></label>
+          <label class="f">Planta<input id="planta" placeholder="Incubadora Comayagua"></label>
+          <label class="f">Auditor<input id="auditor" placeholder="Nombre"></label>
+        </div>
+        <p class="small muted" id="specTxt" style="margin:10px 0 0"></p>
+      </div>
+
+      <div class="card">
+        <div class="scorebox" style="margin-bottom:14px">
+          <div id="ringNow"></div>
+          <div class="t">
+            <h2 id="machTitle">Máquina —</h2>
+            <span class="small muted" id="progTxt">Escriba el número de máquina para empezar.</span>
+            <span id="gradeNow"></span>
+          </div>
+        </div>
+        <div class="slots" id="slots"></div>
+        <div class="row" style="margin-top:12px;justify-content:space-between">
+          <button class="btn ghost sm" id="btnVerMaq">Ver detalle</button>
+          <button class="btn ghost sm" id="btnNuevaMaq">Siguiente máquina</button>
+        </div>
+      </div>
+
+      <div class="card" id="panel" hidden>
+        <div class="head">
+          <div><h2 id="panelTitle">Punto</h2><span class="small muted" id="panelSub"></span></div>
+          <button class="btn ghost sm" id="btnCerrar">Cerrar</button>
+        </div>
+        <div class="seg" id="metodo">
+          <button data-m="sensor" class="on">Sensor</button>
+          <button data-m="foto">Medir en foto</button>
+          <button data-m="manual">Manual</button>
+        </div>
+
+        <div class="stack">
+          <!-- SENSOR -->
+          <div id="sensorArea">
+            <div class="seg" id="smode">
+              <button data-s="flat" class="on">Apoyado en la bandeja</button>
+              <button data-s="edge">Alinear con cámara</button>
+            </div>
+            <p class="small muted" id="smodeHint" style="margin:8px 0 10px"></p>
+            <div class="cam" id="camBox">
+              <video id="vid" playsinline muted autoplay></video>
+              <canvas id="ov"></canvas>
+              <div class="msg" id="camMsg">Toque «Activar sensor».</div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="btnIniciar">Activar sensor</button>
+              <button class="btn ghost" id="btnFijar" hidden>Congelar lectura</button>
+              <button class="btn ghost" id="btnRepetir" hidden>Seguir leyendo</button>
+            </div>
+            <div class="row" style="margin-top:10px" id="evRow">
+              <label class="btn ghost sm" for="evIn2">Adjuntar foto (opcional)</label>
+              <input type="file" id="evIn2" accept="image/*" capture="environment" hidden>
+              <span class="small muted" id="evTxt2"></span>
+            </div>
+            <p class="small muted" id="sensorMsg" style="margin:8px 0 0"></p>
+          </div>
+
+          <!-- FOTO -->
+          <div id="fotoArea" hidden>
+            <div class="dropzone" id="dz">
+              <span class="muted small">Foto de frente a la bandeja, lo más perpendicular posible.</span>
+              <div class="row" style="justify-content:center">
+                <label class="btn" for="camIn">Tomar foto</label>
+                <label class="btn ghost" for="galIn">Desde galería</label>
+              </div>
+              <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
+              <input type="file" id="galIn" accept="image/*" hidden>
+            </div>
+            <div id="cvWrap" hidden>
+              <div class="canvasbox"><canvas id="cv"></canvas></div>
+              <div class="legend" style="margin-top:8px">
+                <span><i class="dot" style="background:#2dd4bf"></i>Borde de la bandeja</span>
+                <span id="lgRef" hidden><i class="dot" style="background:#fbbf24"></i>Referencia</span>
+              </div>
+              <div class="grid2" style="margin-top:10px">
+                <label class="f">Medir contra
+                  <select id="refMode">
+                    <option value="foto">Horizontal de la foto</option>
+                    <option value="h">Línea horizontal (marco)</option>
+                    <option value="v">Línea vertical (poste)</option>
+                  </select>
+                </label>
+                <div class="f" style="justify-content:flex-end"><button class="btn ghost sm" id="btnOtraFoto">Cambiar foto</button></div>
+              </div>
+              <div class="hint" style="margin-top:10px">Arrastre los puntos sobre el borde de la bandeja. Si el teléfono no estaba nivelado, use una línea del marco como referencia.</div>
+            </div>
+          </div>
+
+          <!-- MANUAL -->
+          <div id="manualArea" hidden>
+            <label class="f">Ángulo leído (°)<input id="manualVal" type="number" step="0.1" inputmode="decimal" placeholder="Ej. 44.5"></label>
+            <div class="row" style="margin-top:10px">
+              <label class="btn ghost sm" for="evIn">Adjuntar foto de evidencia</label>
+              <input type="file" id="evIn" accept="image/*" capture="environment" hidden>
+              <span class="small muted" id="evTxt"></span>
+            </div>
+          </div>
+
+          <label class="f">Observación<input id="nota" placeholder="Opcional: tope flojo, actuador lento…"></label>
+          <div class="savebar">
+            <div class="readout">
+              <div class="big" id="angTxt">—<small>°</small></div>
+              <span class="pill pend" id="estTxt">Sin medir</span>
+            </div>
+            <p class="small muted" style="margin:0" id="devTxt"></p>
+            <button class="btn" id="btnGuardar" disabled>Guardar medición</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RESUMEN ================= -->
+  <section id="tab-res" hidden>
+    <div class="stack">
+      <div class="card">
+        <div class="grid2">
+          <label class="f">Planta<select id="rPlanta"></select></label>
+          <label class="f">Modelo<select id="rModelo"></select></label>
+        </div>
+      </div>
+      <div class="card kpis" id="kpis"></div>
+      <div class="card">
+        <div class="head"><div><h2>Puntuación por máquina</h2><span class="small muted">Última auditoría · de menor a mayor · línea punteada = meta 85 · toque una barra para ver el detalle</span></div></div>
+        <div class="chart" id="chScore"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Ángulos medidos vs. rango aceptado</h2><span class="small muted">Último valor de cada punto · franja = objetivo ± tolerancia</span></div></div>
+        <div class="chart" id="chDots"></div>
+        <div class="legend" style="margin-top:8px">
+          <span><i class="dot" style="background:var(--ok)"></i>Dentro</span>
+          <span><i class="dot" style="background:var(--bad)"></i>Fuera</span>
+          <span><i class="dot" style="border:2px solid var(--muted)"></i>Volteo B (hueco)</span>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:8px">Cómo se calcula la puntuación</h2>
+        <p class="small muted" style="margin:0" id="scoreHelp"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PENDIENTES ================= -->
+  <section id="tab-pend" hidden>
+    <div class="stack">
+      <div class="card">
+        <div class="head"><div><h2>Pendientes para mantenimiento</h2><span class="small muted" id="pendSub"></span></div></div>
+        <div id="pendList"></div>
+      </div>
+      <div class="card" id="msgCard">
+        <h2 style="margin-bottom:10px">Mensaje para mantenimiento</h2>
+        <label class="check small" style="margin-bottom:10px"><input type="checkbox" id="chkSoloNuevos" checked> Solo los que aún no se han notificado</label>
+        <pre class="msgbox" id="msgTxt"></pre>
+        <div class="row" style="margin-top:12px">
+          <button class="btn sm" id="btnCopiar">Copiar</button>
+          <a class="btn wa sm" id="btnWA" href="#" target="_blank" rel="noopener">WhatsApp</a>
+          <button class="btn ghost sm" id="btnShare">Compartir…</button>
+          <button class="btn ghost sm" id="btnNotif">Marcar como notificados</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:6px">Corregidos y verificados</h2>
+        <span class="small muted">Puntos que estaban fuera y la última medición ya cumple (últimos 30 días).</span>
+        <div id="fixedList" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= REGISTROS ================= -->
+  <section id="tab-reg" hidden>
+    <div class="stack">
+      <div class="card">
+        <div class="grid2">
+          <label class="f">Buscar<input id="filtro" placeholder="Máquina, punto, auditor…"></label>
+          <label class="f">Estado
+            <select id="fEstado"><option value="">Todos</option><option value="ok">Cumple</option><option value="bad">No cumple</option></select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn sm" id="btnCSV">Exportar CSV</button>
+          <button class="btn ghost sm" id="btnBackup">Respaldo completo</button>
+          <label class="btn ghost sm" for="impIn">Importar respaldo</label>
+          <input type="file" id="impIn" accept=".json,application/json" hidden>
+        </div>
+        <p class="small muted" style="margin:10px 0 0" id="regCount"></p>
+      </div>
+      <div class="card" id="lista"></div>
+    </div>
+  </section>
+
+  <!-- ================= AJUSTES ================= -->
+  <section id="tab-aj" hidden>
+    <div class="stack">
+      <div class="card">
+        <h2 style="margin-bottom:6px">Modelos de incubadora</h2>
+        <p class="small muted" style="margin:0 0 12px">Ángulo objetivo, tolerancia y puntos de cada modelo. Los valores iniciales son de ejemplo: ajústelos a la especificación del fabricante.</p>
+        <div class="stack" id="modelos" style="margin-top:0"></div>
+        <div class="row" style="margin-top:12px"><button class="btn ghost sm" id="btnAddModelo">Agregar modelo</button></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:10px">Puntuación</h2>
+        <label class="f">Puntos que se restan por cada grado fuera de tolerancia<input id="penalty" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
+        <p class="small muted" style="margin:8px 0 0">Con 20, un punto a 2° fuera de tolerancia vale 60/100 y a 5° fuera vale 0.</p>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:10px">Calibrar el sensor del teléfono</h2>
+        <p class="small muted" style="margin:0 0 10px">Use una superficie que usted sabe que está nivelada (un nivel de burbuja ayuda). Para «Apoyado» acueste el teléfono con la pantalla hacia arriba; para «Cámara» póngalo de pie sobre su canto largo. Toque «Calibrar a 0°». Repítalo si cambia de teléfono o de funda.</p>
+        <label class="f" style="margin-bottom:10px">Forma de medir a calibrar<select id="calMode"><option value="flat">Apoyado en la bandeja</option><option value="edge">Alinear con cámara (de canto)</option></select></label>
+        <div class="row">
+          <span class="big" style="font-size:30px" id="calLive">—<small>°</small></span>
+          <button class="btn sm" id="btnCalStart">Leer sensor</button>
+          <button class="btn ghost sm" id="btnCal" disabled>Calibrar a 0°</button>
+          <button class="btn ghost sm" id="btnCalReset">Quitar calibración</button>
+        </div>
+        <p class="small muted" style="margin:8px 0 0" id="calTxt"></p>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:10px">Diagnóstico</h2>
+        <table class="tbl"><tbody id="diag"></tbody></table>
+        <p class="small muted" style="margin:8px 0 0">Si algo sale en rojo, la app le dice qué hacer en la pantalla Medir.</p>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:10px">Datos en este teléfono</h2>
+        <p class="small muted" style="margin:0" id="storeTxt"></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button data-t="medir" class="on"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20L19 6"/><path d="M9 20a6 6 0 0 0-1.8-4.2"/></svg>Medir</button>
+  <button data-t="res"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Resumen</button>
+  <button data-t="pend"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Pendientes<span class="badge" id="pendBadge" hidden>0</span></button>
+  <button data-t="reg"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
+  <button data-t="aj"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
+</nav>
+
+<!-- detalle de máquina -->
+<div class="overlay" id="detail" hidden>
+  <div class="wrap">
+    <div class="head" style="margin-top:6px;flex-wrap:nowrap">
+      <div><div class="eyebrow" id="dEyebrow"></div><h1 id="dTitle" style="font-size:22px"></h1></div>
+      <button class="btn ghost sm" id="dClose" style="flex-shrink:0">Cerrar</button>
+    </div>
+    <div class="stack" id="dBody"></div>
+  </div>
+</div>
+
+<div class="viewer" id="viewer" hidden>
+  <img id="viewerImg" alt="Foto de la medición">
+  <button class="btn ghost" id="viewerClose" style="color:#fff;border-color:rgba(255,255,255,.3)">Cerrar</button>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmt=(n,d=1)=>(n==null||isNaN(n))?"—":Number(n).toFixed(d);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2400);}
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const dmy=s=>{if(!s)return"";const[a,b,c]=s.split("-");return c+"/"+b+"/"+a};
+const norm90=a=>{while(a>90)a-=180;while(a<=-90)a+=180;return a};
+
+/* ================= configuración ================= */
+const LS="auditoria_volteo_cfg_v2";
+const DEFAULT_CFG={planta:"Incubadora Comayagua",auditor:"",penalty:20,zero:0,tasks:{},models:[
+  {id:"m1",name:"Petersime carga única",target:45,tol:2,bidir:true,points:["Izquierdo · Adelante","Izquierdo · Atrás","Derecho · Adelante","Derecho · Atrás"]},
+  {id:"m2",name:"Chick Master multi-etapa",target:45,tol:2,bidir:true,points:["Izquierdo · Adelante","Izquierdo · Atrás","Derecho · Adelante","Derecho · Atrás"]}
+]};
+let storageOK=true;
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){storageOK=false;return null}}
+let cfg=lsGet(LS);
+if(!cfg){const v1=lsGet("auditoria_volteo_cfg_v1");cfg=JSON.parse(JSON.stringify(DEFAULT_CFG));
+  if(v1&&Array.isArray(v1.models)){cfg.planta=v1.planta||cfg.planta;cfg.auditor=v1.auditor||"";cfg.models=v1.models.map(m=>({bidir:false,...m}))}}
+cfg.tasks=cfg.tasks||{}; if(!(cfg.penalty>0))cfg.penalty=20; if(typeof cfg.zero!=="number")cfg.zero=0;
+if(!Array.isArray(cfg.models)||!cfg.models.length)cfg.models=JSON.parse(JSON.stringify(DEFAULT_CFG.models));
+function saveCfg(){try{localStorage.setItem(LS,JSON.stringify(cfg))}catch(e){storageOK=false}}
+
+/* ================= base de datos (IndexedDB) ================= */
+let memRecs=[],dbp=null,idbOK=null; /* null = aún sin probar */
+function idb(){if(!dbp)dbp=new Promise((res,rej)=>{try{const r=indexedDB.open("auditoria_volteo",1);
+  r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains("rec"))r.result.createObjectStore("rec",{keyPath:"id"})};
+  r.onsuccess=()=>{const db=r.result;db.onversionchange=()=>{db.close();dbp=null};db.onclose=()=>{dbp=null};res(db)};
+  r.onerror=()=>{dbp=null;rej(r.error)};r.onblocked=()=>{dbp=null;rej(new Error("bloqueado"))}}catch(e){dbp=null;rej(e)}});return dbp}
+function tx(mode,fn){return idb().then(db=>new Promise((res,rej)=>{let out;const t=db.transaction("rec",mode);out=fn(t.objectStore("rec"));
+  t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error||new Error("transacción cancelada"))}))}
+/* prueba real: escribe, lee y borra un registro */
+async function storageProbe(){try{const id="__probe__"+Date.now();await tx("readwrite",s=>s.put({id,ts:0}));const g=await tx("readonly",s=>s.get(id));await tx("readwrite",s=>s.delete(id));idbOK=!!g}catch(e){idbOK=false}return idbOK}
+async function dbAll(){let a=[];if(idbOK!==false){try{a=await tx("readonly",s=>s.getAll())||[]}catch(e){idbOK=false}}
+  const ids=new Set(a.map(r=>r.id));return a.concat(memRecs.filter(r=>!ids.has(r.id)))}
+async function dbGet(id){if(idbOK!==false){try{const r=await tx("readonly",s=>s.get(id));if(r)return r}catch(e){}}return memRecs.find(r=>r.id===id)||null}
+async function dbPut(r){
+  if(idbOK!==false){try{await tx("readwrite",s=>s.put(r));memRecs=memRecs.filter(x=>x.id!==r.id);return"idb"}
+    catch(e){/* reintento con conexión nueva (p. ej. cuota llena por la foto) */
+      dbp=null;try{await tx("readwrite",s=>s.put(r));return"idb"}catch(e2){
+        if(r.photo){try{await tx("readwrite",s=>s.put({...r,photo:null}));toast("Guardado sin foto: el almacenamiento está lleno");return"idb"}catch(e3){}}
+        idbOK=false}}}
+  memRecs=memRecs.filter(x=>x.id!==r.id);memRecs.push(r);return"mem"}
+async function dbDel(id){memRecs=memRecs.filter(x=>x.id!==id);if(idbOK!==false){try{await tx("readwrite",s=>s.delete(id))}catch(e){}}}
+function updateStoreBanner(){
+  const b=$("#storeBanner");
+  if(idbOK===false){b.hidden=false;
+    b.innerHTML=`<b>⚠ Este navegador NO está guardando las mediciones.</b> ${memRecs.length} medición(es) solo en memoria: se pierden al cerrar. `+
+      (window.isSecureContext?"¿Modo incógnito? Abra la app normal.":"Abra la app desde su enlace https://.")+
+      ` <div class="row" style="margin-top:8px"><button class="btn sm" id="btnBkNow">Descargar respaldo ahora</button></div>`;
+    $("#btnBkNow").onclick=()=>{download(`respaldo_volteo_${today()}_${new Date().toTimeString().slice(0,5).replace(":","")}.json`,JSON.stringify({v:2,cfg,recs}),"application/json");cfg.lastBackup=Date.now();saveCfg()}}
+  else b.hidden=true;
+}
+window.addEventListener("beforeunload",e=>{if(idbOK===false&&memRecs.length){e.preventDefault();e.returnValue=""}});
+
+let recs=[];
+async function reload(){
+  recs=(await dbAll()).map(r=>({...r,slot:r.slot||r.point,dir:r.dir||""})).sort((a,b)=>b.ts-a.ts);
+  renderAll();
+}
+
+/* ================= lógica de negocio ================= */
+function slotsOf(m){const dirs=m.bidir?["Volteo A","Volteo B"]:[""];const out=[];
+  m.points.forEach(p=>dirs.forEach(d=>out.push({point:p,dir:d,label:d?p+" · "+d:p})));return out}
+const modelById=id=>cfg.models.find(m=>m.id===id);
+function evalAng(a,target,tol){if(a==null||isNaN(a))return null;const dev=Math.abs(Math.abs(a)-target);
+  const score=dev<=tol+1e-9?100:Math.max(0,100-(dev-tol)*cfg.penalty);return{dev,ok:dev<=tol+1e-9,score:Math.round(score)}}
+function grade(s){if(s==null)return{t:"Sin datos",c:"pend"};if(s>=95)return{t:"Excelente",c:"ok"};if(s>=85)return{t:"Aceptable",c:"ok"};if(s>=70)return{t:"Revisar",c:"warn"};return{t:"Crítico",c:"bad"}}
+const gradeColor=c=>c==="ok"?"var(--ok)":c==="warn"?"var(--warn)":c==="bad"?"var(--bad)":"var(--muted)";
+const mkey=r=>(r.plant||"")+"|"+r.machine+"|"+r.modelId;
+const recScore=r=>evalAng(r.angle,r.target,r.tol).score;
+function latestBySlot(list){const m=new Map();list.forEach(r=>{const c=m.get(r.slot);if(!c||r.ts>c.ts)m.set(r.slot,r)});return m}
+/* auditoría = una máquina en un día; cuenta la última medición de cada punto */
+function auditOf(list){
+  const r0=list[0], mdl=modelById(r0.modelId), expected=mdl?slotsOf(mdl).length:null;
+  const lat=[...latestBySlot(list).values()];
+  const nf=lat.filter(r=>r.status==="bad").length;let score=lat.length?Math.floor(lat.reduce((s,r)=>s+recScore(r),0)/lat.length):null;
+  if(score!=null&&nf>0)score=Math.min(score,94); // con un punto fuera la máquina no puede ser Excelente
+  return{key:mkey(r0),plant:r0.plant,machine:r0.machine,modelId:r0.modelId,modelName:r0.modelName,date:r0.date,
+    latest:lat,score,expected,measured:lat.length,fails:lat.filter(r=>r.status==="bad").length,complete:expected!=null&&lat.length>=expected}
+}
+function auditsByMachine(source){
+  const g=new Map();source.forEach(r=>{const k=mkey(r);if(!g.has(k))g.set(k,new Map());const d=g.get(k);(d.get(r.date)||d.set(r.date,[]).get(r.date)).push(r)});
+  const out=new Map();g.forEach((days,k)=>{out.set(k,[...days.values()].map(auditOf).sort((a,b)=>a.date.localeCompare(b.date)))});return out;
+}
+/* pendientes: por máquina y punto, la última medición de todo el historial */
+function pendings(){
+  const byM=new Map();recs.forEach(r=>{const k=mkey(r);(byM.get(k)||byM.set(k,[]).get(k)).push(r)});
+  const open=[],fixed=[];const lim=Date.now()-30*864e5;
+  byM.forEach((list,k)=>{
+    const bySlot=new Map();list.forEach(r=>{(bySlot.get(r.slot)||bySlot.set(r.slot,[]).get(r.slot)).push(r)});
+    bySlot.forEach((arr,slot)=>{
+      arr.sort((a,b)=>b.ts-a.ts);const last=arr[0];
+      if(last.status==="bad"){let since=last.ts;for(const r of arr){if(r.status==="bad")since=r.ts;else break}
+        const tk=k+"|"+slot, st=cfg.tasks[tk];
+        open.push({key:tk,mk:k,rec:last,since,notified:!!(st&&st.notifiedAt>=since),notifiedAt:st?st.notifiedAt:null});}
+      else if(last.ts>=lim){const prevBad=arr.find(r=>r.status==="bad");if(prevBad)fixed.push({mk:k,rec:last,prev:prevBad})}
+    });
+  });
+  open.sort((a,b)=>a.rec.machine.localeCompare(b.rec.machine,undefined,{numeric:true})||a.rec.slot.localeCompare(b.rec.slot));
+  fixed.sort((a,b)=>b.rec.ts-a.rec.ts);
+  return{open,fixed};
+}
+
+/* ================= pestañas ================= */
+let curTab="medir";
+$$("nav.tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+function showTab(t){curTab=t;$$("nav.tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===t));
+  ["medir","res","pend","reg","aj"].forEach(x=>$("#tab-"+x).hidden=x!==t);
+  if(t!=="medir")stopSensor(); if(t!=="aj")stopCal();
+  renderAll();window.scrollTo(0,0)}
+function renderAll(){renderSlots();renderBadge();
+  if(curTab==="res")renderRes(); if(curTab==="pend")renderPend(); if(curTab==="reg")renderReg(); if(curTab==="aj")renderAj();}
+
+/* ================= aviso de contexto seguro ================= */
+function checkEnv(){
+  const b=$("#secBanner");
+  if(!window.isSecureContext){b.hidden=false;b.innerHTML="<b>Abierta como archivo.</b> Así Chrome bloquea el sensor y la cámara. «Medir en foto» y «Manual» sí funcionan. Para usar el sensor, ábrala desde su enlace <b>https://</b>.";}
+  else b.hidden=true;
+}
+
+/* ================= MEDIR: datos de máquina ================= */
+$("#hoy").textContent=new Date().toLocaleDateString("es-HN",{weekday:"short",day:"numeric",month:"short"});
+function fillModelSelect(){
+  const v=$("#modelo").value;
+  $("#modelo").innerHTML=cfg.models.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("");
+  if(cfg.models.some(m=>m.id===v))$("#modelo").value=v;else if(cfg.lastModel&&modelById(cfg.lastModel))$("#modelo").value=cfg.lastModel;
+}
+const curModel=()=>modelById($("#modelo").value)||cfg.models[0];
+$("#planta").value=cfg.planta||"";$("#auditor").value=cfg.auditor||"";
+$("#planta").oninput=()=>{cfg.planta=$("#planta").value;saveCfg();renderSlots()};
+$("#auditor").oninput=()=>{cfg.auditor=$("#auditor").value;saveCfg()};
+$("#modelo").onchange=()=>{cfg.lastModel=$("#modelo").value;saveCfg();closePanel();renderSlots()};
+$("#maq").oninput=()=>{closePanel();renderSlots()};
+const curKey=()=>($("#planta").value.trim())+"|"+$("#maq").value.trim()+"|"+curModel().id;
+function todayRecs(){const maq=$("#maq").value.trim();if(!maq)return[];const k=curKey().toLowerCase(),d=today();
+  return recs.filter(r=>r.date===d&&mkey(r).toLowerCase()===k)}
+
+function ring(score,size=74){
+  const g=grade(score),r=size/2-6,c=2*Math.PI*r,p=score==null?0:score/100;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Puntuación ${score??"sin datos"}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="7"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${gradeColor(g.c)}" stroke-width="7" stroke-linecap="round"
+      stroke-dasharray="${c*p} ${c}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" style="font:600 ${size*.3}px var(--mono);fill:var(--fg)">${score??"—"}</text></svg>`;
+}
+let selSlot=null;
+function renderSlots(){
+  const m=curModel();if(!m)return;
+  $("#specTxt").textContent=`Objetivo ${fmt(m.target)}° · tolerancia ±${fmt(m.tol)}° → se acepta de ${fmt(m.target-m.tol)}° a ${fmt(m.target+m.tol)}°`+(m.bidir?" en ambos sentidos de volteo":"");
+  const maq=$("#maq").value.trim(), list=todayRecs(), lat=latestBySlot(list), slots=slotsOf(m);
+  const au=list.length?auditOf(list):null;
+  $("#machTitle").textContent=maq?"Máquina "+maq:"Máquina —";
+  $("#ringNow").innerHTML=ring(au?au.score:null);
+  $("#progTxt").textContent=maq?`${lat.size} de ${slots.length} puntos medidos hoy`:"Escriba el número de máquina para empezar.";
+  const g=grade(au?au.score:null);$("#gradeNow").innerHTML=au?`<span class="pill ${g.c}">${g.t}${au.complete?"":" · incompleta"}</span>`:"";
+  $("#btnVerMaq").disabled=!maq||!recs.some(r=>mkey(r).toLowerCase()===curKey().toLowerCase());
+  $("#slots").innerHTML=slots.map((s,i)=>{const r=lat.get(s.label);const cls=r?(r.status==="ok"?"ok":"bad"):"";
+    return `<button class="slot ${cls} ${selSlot===s.label?"sel":""}" data-i="${i}">
+      <span class="nm">${esc(s.point)}</span>${s.dir?`<span class="dir">${esc(s.dir)}</span>`:""}
+      <span class="val">${r?fmt(r.angle)+"°":"—"}</span>
+      ${r?`<span class="pill ${cls}">${r.status==="ok"?"Cumple":"Fuera · "+fmt(r.dev)+"°"}</span>`:`<span class="pill pend">Pendiente</span>`}</button>`}).join("");
+  $$("#slots .slot").forEach(b=>b.onclick=()=>openPanel(slots[+b.dataset.i]));
+}
+$("#btnNuevaMaq").onclick=()=>{const n=$("#maq").value.trim();closePanel();$("#maq").value=/^\d+$/.test(n)?String(+n+1):"";renderSlots();$("#maq").focus()};
+$("#btnVerMaq").onclick=()=>openDetail(curKey());
+
+/* ================= panel de medición ================= */
+let method="sensor",angle=null,cur=null,evid=null,captured=null;
+function openPanel(s){
+  if(!$("#maq").value.trim()){toast("Escriba primero el número de máquina");$("#maq").focus();return}
+  cur=s;selSlot=s.label;renderSlots();
+  $("#panel").hidden=false;$("#panelTitle").textContent=`Máq. ${$("#maq").value.trim()} · ${s.point}`;
+  $("#panelSub").textContent=s.dir?s.dir+(s.dir==="Volteo A"?" (bandejas inclinadas hacia un lado)":" (bandejas inclinadas hacia el otro lado)"):"";
+  $("#nota").value="";$("#manualVal").value="";evid=null;$("#evTxt").textContent="";$("#evTxt2").textContent="";captured=null;angle=null;
+  if(photo){resetLines();draw()}
+  setMethod(method);
+  setTimeout(()=>$("#panel").scrollIntoView({behavior:"smooth",block:"start"}),30);
+}
+function closePanel(){$("#panel").hidden=true;selSlot=null;cur=null;stopSensor();renderSlots()}
+$("#btnCerrar").onclick=closePanel;
+$$("#metodo button").forEach(b=>b.onclick=()=>setMethod(b.dataset.m));
+function setMethod(m){method=m;$$("#metodo button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  $("#sensorArea").hidden=m!=="sensor";$("#fotoArea").hidden=m!=="foto";$("#manualArea").hidden=m!=="manual";
+  if(m!=="sensor")stopSensor();else{resetSensorUI();sizeOverlay();drawOverlay(smooth,false);if(sensorOn){cancelAnimationFrame(rafId);loop()}}
+  computeAngle()}
+function computeAngle(){
+  if(method==="foto")angle=photo?photoAngle():null;
+  else if(method==="manual"){const v=parseFloat($("#manualVal").value);angle=isNaN(v)?null:v}
+  else angle=captured?captured.angle:(sensorOn&&smooth!=null?smooth:null);
+  updateReadout(angle,method==="sensor"&&!captured&&sensorOn)}
+function updateReadout(a,live){
+  const m=curModel(),e=evalAng(a,m.target,m.tol);
+  $("#angTxt").innerHTML=(a==null?"—":fmt(a))+"<small>°</small>";
+  const est=$("#estTxt");
+  if(!e){est.className="pill pend";est.textContent="Sin medir";$("#devTxt").textContent=""}
+  else{est.className="pill "+(e.ok?"ok":"bad");est.textContent=(e.ok?"Cumple":"No cumple")+(live?" · en vivo":"");
+    $("#devTxt").textContent=`Desviación ${fmt(e.dev)}° de ${fmt(m.target)}° · vale ${e.score}/100`}
+  $("#btnGuardar").disabled=a==null;
+}
+$("#manualVal").oninput=computeAngle;
+
+/* ================= SENSOR ================= */
+/* Dos formas:
+   flat = teléfono acostado sobre la bandeja (como el inclinómetro Johnson): ángulo entre la pantalla y el horizonte.
+   edge = teléfono de pie, canto/línea alineada con la bandeja vista de frente: giro de la pantalla respecto al horizonte. */
+const vid=$("#vid"),ov=$("#ov"),octx=ov.getContext("2d");
+let smode=cfg.smode||"flat";
+let sensorOn=false,stream=null,smooth=null,hist=[],lastEvt=0,evtCount=0,posWarn="",src="",rafId=0,lastG=null;
+const HINT={flat:"Acueste el teléfono sobre los huevos o el borde de la bandeja, con la pantalla hacia arriba. Mide igual que el inclinómetro de aguja.",
+            edge:"Sostenga el teléfono de pie frente a la máquina y alinee la línea blanca punteada con el borde de la bandeja, o apoye el canto del teléfono contra el marco."};
+function screenAngle(){const a=(screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:(typeof window.orientation==="number"?window.orientation:0);return a*Math.PI/180}
+function angleFromG(ax,ay,az,mode){
+  const g=Math.hypot(ax,ay,az)||1, zr=Math.abs(az)/g;
+  if(mode==="flat"){posWarn=zr<0.17?"Acueste el teléfono sobre la bandeja (está casi vertical).":"";
+    return Math.atan2(Math.hypot(ax,ay),Math.abs(az))*180/Math.PI}
+  posWarn=zr>0.82?"Ponga el teléfono de pie (de canto), no acostado.":"";
+  const a=screenAngle(),sx=ax*Math.cos(a)-ay*Math.sin(a),sy=ax*Math.sin(a)+ay*Math.cos(a);
+  return norm90(Math.atan2(sx,sy)*180/Math.PI);
+}
+function zeroOf(mode){return mode==="flat"?(cfg.zeroFlat||0):(cfg.zero||0)}
+function feed(ax,ay,az){
+  lastEvt=performance.now();evtCount++;lastG=[ax,ay,az];
+  let raw=angleFromG(ax,ay,az,smode)-(calOn?0:zeroOf(smode));
+  if(smode==="edge")raw=norm90(raw);
+  if(smooth==null||Math.abs(raw-smooth)>15)smooth=raw;else smooth+=0.2*(raw-smooth);
+  hist.push(smooth);if(hist.length>30)hist.shift();
+}
+function onMotion(e){const g=e.accelerationIncludingGravity;if(!g||g.x==null||g.y==null||g.z==null)return;src="motion";feed(g.x,g.y,g.z)}
+function onOrient(e){if(src==="motion"&&performance.now()-lastEvt<500)return;if(e.beta==null||e.gamma==null)return;src="orient";
+  const b=e.beta*Math.PI/180,c=e.gamma*Math.PI/180;feed(-Math.sin(c)*Math.cos(b),Math.sin(b),Math.cos(c)*Math.cos(b))}
+const stable=()=>hist.length>=15&&(Math.max(...hist.slice(-15))-Math.min(...hist.slice(-15)))<0.5;
+
+async function startSensors(){
+  if(sensorOn)return true;
+  if(!window.isSecureContext){$("#sensorMsg").innerHTML="<b>El sensor está bloqueado</b> porque la app se abrió como archivo. Ábrala desde su enlace https://. Mientras tanto use «Medir en foto» o «Manual».";return false}
+  if(typeof DeviceMotionEvent==="undefined"&&typeof DeviceOrientationEvent==="undefined"){$("#sensorMsg").textContent="Este navegador no tiene acceso al sensor de inclinación.";return false}
+  try{if(typeof DeviceMotionEvent!=="undefined"&&typeof DeviceMotionEvent.requestPermission==="function"){const r=await DeviceMotionEvent.requestPermission();if(r!=="granted"){$("#sensorMsg").textContent="Permiso de movimiento denegado. Actívelo en los ajustes del navegador.";return false}}}catch(e){}
+  try{if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function")await DeviceOrientationEvent.requestPermission()}catch(e){}
+  smooth=null;hist=[];src="";lastEvt=0;evtCount=0;
+  window.addEventListener("devicemotion",onMotion);window.addEventListener("deviceorientation",onOrient);
+  sensorOn=true;
+  setTimeout(()=>{if(sensorOn&&!evtCount)$("#sensorMsg").innerHTML="<b>El teléfono no envía datos del sensor.</b> Revise en Chrome: ⋮ → Configuración → Configuración de sitios → Sensores de movimiento → Permitir. Mientras tanto use «Medir en foto»."},2500);
+  return true;
+}
+async function startCamera(){
+  if(smode!=="edge"||stream||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:1280}},audio:false});
+    vid.srcObject=stream;await vid.play().catch(()=>{})}
+  catch(e){stream=null;$("#sensorMsg").textContent="Cámara no disponible; se mide solo con el sensor."}
+}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}vid.srcObject=null}
+function stopSensor(){
+  if(sensorOn){window.removeEventListener("devicemotion",onMotion);window.removeEventListener("deviceorientation",onOrient);sensorOn=false}
+  cancelAnimationFrame(rafId);stopCamera();
+}
+function resetSensorUI(){
+  $("#btnIniciar").hidden=sensorOn;$("#btnFijar").hidden=!sensorOn||!!captured;$("#btnRepetir").hidden=!captured||!sensorOn;
+  $("#camMsg").hidden=sensorOn||!!captured;$("#evRow").hidden=smode!=="flat";
+  $("#smodeHint").textContent=HINT[smode];vid.hidden=smode!=="edge";
+  $$("#smode button").forEach(b=>b.classList.toggle("on",b.dataset.s===smode));
+}
+$$("#smode button").forEach(b=>b.onclick=async()=>{smode=b.dataset.s;cfg.smode=smode;saveCfg();smooth=null;hist=[];captured=null;
+  if(smode==="edge"&&sensorOn)await startCamera();if(smode==="flat")stopCamera();resetSensorUI();sizeOverlay();drawOverlay();computeAngle()});
+$("#btnIniciar").onclick=async()=>{
+  captured=null;$("#sensorMsg").textContent="";
+  if(!(await startSensors()))return;
+  await startCamera();resetSensorUI();sizeOverlay();cancelAnimationFrame(rafId);loop();
+  $("#sensorMsg").textContent="Leyendo… mantenga el teléfono quieto.";
+};
+$("#btnFijar").onclick=()=>{if(smooth==null){toast("Aún no hay lectura del sensor");return}doCapture();resetSensorUI();computeAngle()};
+$("#btnRepetir").onclick=()=>{captured=null;resetSensorUI();computeAngle()};
+function loop(){
+  if(!sensorOn)return;
+  if(!captured){drawOverlay(smooth,stable());if(smooth!=null)updateReadout(smooth,true);
+    if(posWarn&&smooth!=null)$("#sensorMsg").textContent=posWarn;
+    else if(smooth!=null)$("#sensorMsg").textContent=stable()?"● Estable. Toque «Guardar medición».":"Estabilizando…";}
+  rafId=requestAnimationFrame(loop);
+}
+function sizeOverlay(){const r=ov.getBoundingClientRect(),d=window.devicePixelRatio||1;ov.width=Math.max(1,Math.round(r.width*d));ov.height=Math.max(1,Math.round(r.height*d))}
+window.addEventListener("resize",()=>{if(!$("#sensorArea").hidden){sizeOverlay();drawOverlay(captured?captured.angle:smooth,false)}});
+
+/* modo cámara: transportador girado con el horizonte real */
+function paintProtractor(c,W,H,ang,isStable,k){
+  const m=curModel(),cx=W/2,cy=H*0.62,R=Math.min(W,H)*0.42;
+  c.save();c.lineCap="round";
+  c.setLineDash([10*k,8*k]);c.strokeStyle="rgba(255,255,255,.95)";c.lineWidth=2.5*k;c.beginPath();c.moveTo(0,cy);c.lineTo(W,cy);c.stroke();c.setLineDash([]);
+  if(ang!=null){
+    c.translate(cx,cy);c.rotate(ang*Math.PI/180);
+    c.beginPath();c.arc(0,0,R,Math.PI,2*Math.PI);c.closePath();c.fillStyle="rgba(15,23,42,.38)";c.fill();
+    [[180-m.target-m.tol,180-m.target+m.tol],[m.target-m.tol,m.target+m.tol]].forEach(([a1,a2])=>{
+      c.beginPath();c.arc(0,0,R,-a2*Math.PI/180,-a1*Math.PI/180);c.arc(0,0,R*0.78,-a1*Math.PI/180,-a2*Math.PI/180,true);c.closePath();c.fillStyle="rgba(52,211,153,.45)";c.fill()});
+    ticks(c,R,k,180);
+    c.strokeStyle="#fbbf24";c.lineWidth=3*k;c.beginPath();c.moveTo(-R*1.25,0);c.lineTo(R*1.25,0);c.stroke();
+    const ok=evalAng(ang,m.target,m.tol).ok,col=ok?"#34d399":"#fb7185",a=ang*Math.PI/180;
+    c.strokeStyle=col;c.lineWidth=4*k;c.beginPath();if(ang>=0)c.arc(0,0,R*0.55,-a,0);else c.arc(0,0,R*0.55,0,-a);c.stroke();
+    c.fillStyle=col;c.beginPath();c.arc(0,0,6*k,0,7);c.fill();c.setTransform(1,0,0,1,0,0);
+    bigLabel(c,W,H,Math.abs(ang),col,isStable,k);
+  }
+  c.restore();
+}
+function ticks(c,R,k,span){c.strokeStyle="rgba(255,255,255,.9)";c.fillStyle="#fff";c.font=`${11*k}px -apple-system,Segoe UI,Roboto,Arial`;c.textAlign="center";c.textBaseline="middle";
+  for(let d=0;d<=span;d++){const t=-d*Math.PI/180,len=d%10===0?14:d%5===0?9:5;c.lineWidth=(d%10===0?1.6:1)*k;
+    c.beginPath();c.moveTo(Math.cos(t)*R,Math.sin(t)*R);c.lineTo(Math.cos(t)*(R-len*k),Math.sin(t)*(R-len*k));c.stroke();
+    if(d%30===0){const l=d<=90?d:180-d;c.fillText(String(l),Math.cos(t)*(R-26*k),Math.sin(t)*(R-26*k))}}
+  c.lineWidth=2*k;c.beginPath();c.arc(0,0,R,-span*Math.PI/180,0);c.stroke()}
+function bigLabel(c,W,H,v,col,isStable,k){const m=curModel(),txt=fmt(v)+"°";c.font=`600 ${40*k}px ui-monospace,Menlo,Consolas,monospace`;
+  const tw=c.measureText(txt).width;c.fillStyle="rgba(2,6,23,.7)";c.fillRect(W-tw-28*k,H-64*k,tw+20*k,52*k);
+  c.fillStyle=col;c.textAlign="right";c.textBaseline="middle";c.fillText(txt,W-18*k,H-38*k);
+  c.font=`600 ${13*k}px -apple-system,Segoe UI,Roboto,Arial`;c.fillStyle="#e7ecf5";c.textAlign="left";c.fillText(`Objetivo ${fmt(m.target)}° ± ${fmt(m.tol)}°`,12*k,H-22*k);
+  if(isStable){c.fillStyle="#34d399";c.fillText("● Estable",12*k,22*k)}}
+/* modo apoyado: carátula de inclinómetro de aguja (0° a 90°) */
+function paintGauge(c,W,H,ang,isStable,k){
+  const m=curModel();c.save();c.fillStyle="#0b1222";c.fillRect(0,0,W,H);
+  const R=Math.min(W*0.74,H*0.64),cx=W*0.1,cy=H*0.9;
+  c.translate(cx,cy);
+  // franja aceptada
+  const a1=(m.target-m.tol)*Math.PI/180,a2=(m.target+m.tol)*Math.PI/180;
+  c.beginPath();c.arc(0,0,R,-a2,-a1);c.arc(0,0,R*0.8,-a1,-a2,true);c.closePath();c.fillStyle="rgba(52,211,153,.55)";c.fill();
+  ticks(c,R,k,90);
+  // horizonte
+  c.strokeStyle="#fbbf24";c.lineWidth=3*k;c.beginPath();c.moveTo(0,0);c.lineTo(R*1.02,0);c.stroke();
+  if(ang!=null){const ok=evalAng(ang,m.target,m.tol).ok,col=ok?"#34d399":"#fb7185",a=Math.max(0,Math.min(90,ang))*Math.PI/180;
+    c.strokeStyle=col;c.lineWidth=5*k;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*R*0.96,-Math.sin(a)*R*0.96);c.stroke();
+    c.lineWidth=4*k;c.beginPath();c.arc(0,0,R*0.32,-a,0);c.stroke();
+    c.fillStyle=col;c.beginPath();c.arc(0,0,8*k,0,7);c.fill();
+    c.setTransform(1,0,0,1,0,0);
+    const txt=fmt(ang)+"°";c.font=`600 ${46*k}px ui-monospace,Menlo,Consolas,monospace`;c.fillStyle=col;c.textAlign="right";c.textBaseline="top";c.fillText(txt,W-14*k,14*k);
+    c.font=`600 ${13*k}px -apple-system,Segoe UI,Roboto,Arial`;c.fillStyle="#e7ecf5";c.fillText(`Objetivo ${fmt(m.target)}° ± ${fmt(m.tol)}°`,W-14*k,66*k);
+    if(isStable){c.fillStyle="#34d399";c.fillText("● Estable",W-14*k,88*k)}}
+  c.restore();
+}
+function drawOverlay(ang,isStable){
+  const W=ov.width,H=ov.height,d=window.devicePixelRatio||1;octx.clearRect(0,0,W,H);
+  if(captured&&captured.img){const im=captured.img,s=Math.min(W/im.width,H/im.height);octx.fillStyle="#05070d";octx.fillRect(0,0,W,H);
+    octx.drawImage(im,(W-im.width*s)/2,(H-im.height*s)/2,im.width*s,im.height*s);return}
+  if(smode==="flat")paintGauge(octx,W,H,ang,isStable,d);else paintProtractor(octx,W,H,ang,isStable,d);
+}
+/* congela la lectura actual y arma la imagen de evidencia */
+function doCapture(){
+  const a=Math.round(smooth*10)/10,W=900,H=900,c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d"),k=W/(ov.getBoundingClientRect().width||360);
+  if(smode==="edge"){g.fillStyle="#05070d";g.fillRect(0,0,W,H);
+    if(stream&&vid.videoWidth){const s=Math.max(W/vid.videoWidth,H/vid.videoHeight);g.drawImage(vid,(W-vid.videoWidth*s)/2,(H-vid.videoHeight*s)/2,vid.videoWidth*s,vid.videoHeight*s)}
+    paintProtractor(g,W,H,a,false,k)}
+  else paintGauge(g,W,H,a,false,k);
+  captured={angle:a,canvas:c,img:null,mode:smode};
+  const im=new Image();im.onload=()=>{if(captured&&captured.canvas===c){captured.img=im;drawOverlay()}};im.src=c.toDataURL("image/jpeg",.85);
+  return captured;
+}
+$("#evIn2").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;loadImage(f,img=>{evid=img;$("#evTxt2").textContent="Foto adjunta ✓"})};
+
+/* ================= MEDIR EN FOTO ================= */
+const cv=$("#cv"),ctx=cv.getContext("2d");
+let photo=null,L={a:[0,0],b:[0,0],r1:[0,0],r2:[0,0]},drag=null,pscale=1,grabOff=[0,0];
+function loadImage(file,cb){const fr=new FileReader();
+  fr.onload=()=>{const im=new Image();im.onload=()=>{const MAX=1600,k=Math.min(1,MAX/Math.max(im.width,im.height));
+    const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    const out=new Image();out.onload=()=>cb(out);out.src=c.toDataURL("image/jpeg",.85)};im.onerror=()=>toast("No se pudo leer la imagen");im.src=fr.result};
+  fr.readAsDataURL(file)}
+function onPhoto(e){const f=e.target.files[0];e.target.value="";if(!f)return;
+  loadImage(f,img=>{photo={img};$("#dz").hidden=true;$("#cvWrap").hidden=false;resetLines();sizeCanvas();computeAngle()})}
+$("#camIn").onchange=onPhoto;$("#galIn").onchange=onPhoto;
+$("#btnOtraFoto").onclick=()=>{photo=null;$("#dz").hidden=false;$("#cvWrap").hidden=true;computeAngle()};
+function setRef(){const w=photo.img.width,h=photo.img.height,v=$("#refMode").value;
+  if(v==="v"){L.r1=[w*.12,h*.2];L.r2=[w*.12,h*.85]}else{L.r1=[w*.15,h*.88];L.r2=[w*.85,h*.88]}}
+function resetLines(){const w=photo.img.width,h=photo.img.height,cx=w/2,cy=h/2,d=Math.min(w,h)*.3;L.a=[cx-d,cy+d];L.b=[cx+d,cy-d];setRef()}
+function sizeCanvas(){if(!photo)return;const cw=cv.parentElement.clientWidth||340,dpr=window.devicePixelRatio||1;pscale=cw/photo.img.width;
+  cv.width=Math.round(cw*dpr);cv.height=Math.round(photo.img.height*pscale*dpr);cv.style.height=(photo.img.height*pscale)+"px";draw()}
+window.addEventListener("resize",()=>{if(!$("#cvWrap").hidden)sizeCanvas()});
+$("#refMode").onchange=()=>{$("#lgRef").hidden=$("#refMode").value==="foto";if(photo)setRef();draw();computeAngle()};
+const lineAng=(p,q)=>norm90(Math.atan2(-(q[1]-p[1]),q[0]-p[0])*180/Math.PI);
+function photoAngle(){const t=lineAng(L.a,L.b),mode=$("#refMode").value;if(mode==="foto")return t;const r=lineAng(L.r1,L.r2);
+  return mode==="h"?norm90(t-r):norm90(t-(r>0?r-90:r+90))}
+function draw(){if(!photo)return;const dpr=window.devicePixelRatio||1,s=pscale*dpr;
+  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(photo.img,0,0,cv.width,cv.height);
+  const P=p=>[p[0]*s,p[1]*s];
+  const line=(p,q,col)=>{const A=P(p),B=P(q);ctx.lineWidth=4*dpr;ctx.strokeStyle="rgba(0,0,0,.55)";ctx.beginPath();ctx.moveTo(...A);ctx.lineTo(...B);ctx.stroke();
+    ctx.lineWidth=2*dpr;ctx.strokeStyle=col;ctx.beginPath();ctx.moveTo(...A);ctx.lineTo(...B);ctx.stroke();
+    [A,B].forEach(c=>{ctx.beginPath();ctx.arc(c[0],c[1],12*dpr,0,7);ctx.fillStyle="rgba(0,0,0,.35)";ctx.fill();ctx.lineWidth=2.5*dpr;ctx.strokeStyle=col;ctx.stroke();ctx.beginPath();ctx.arc(c[0],c[1],2*dpr,0,7);ctx.fillStyle=col;ctx.fill()})};
+  if($("#refMode").value!=="foto")line(L.r1,L.r2,"#fbbf24");
+  else{const A=P(L.a);ctx.setLineDash([6*dpr,6*dpr]);ctx.lineWidth=1.5*dpr;ctx.strokeStyle="rgba(251,191,36,.9)";ctx.beginPath();ctx.moveTo(0,A[1]);ctx.lineTo(cv.width,A[1]);ctx.stroke();ctx.setLineDash([])}
+  line(L.a,L.b,"#2dd4bf");
+  const A=P(L.a);ctx.font=`600 ${15*dpr}px ui-monospace,Menlo,monospace`;ctx.fillStyle="#fff";ctx.strokeStyle="rgba(0,0,0,.7)";ctx.lineWidth=3*dpr;
+  const t=fmt(Math.abs(photoAngle()))+"°";ctx.strokeText(t,A[0]+16*dpr,A[1]-14*dpr);ctx.fillText(t,A[0]+16*dpr,A[1]-14*dpr);
+  if(drag)loupe(drag,s,dpr)}
+function loupe(key,s,dpr){const p=L[key],z=3,R=55*dpr,sz=R*2/(z*s),cx=p[0]*s<cv.width/2?cv.width-R-10*dpr:R+10*dpr,cy=R+10*dpr;
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.clip();ctx.drawImage(photo.img,p[0]-sz/2,p[1]-sz/2,sz,sz,cx-R,cy-R,R*2,R*2);ctx.restore();
+  ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.lineWidth=2*dpr;ctx.strokeStyle="#fff";ctx.stroke();
+  ctx.strokeStyle="#2dd4bf";ctx.lineWidth=1.5*dpr;ctx.beginPath();ctx.moveTo(cx-12*dpr,cy);ctx.lineTo(cx+12*dpr,cy);ctx.moveTo(cx,cy-12*dpr);ctx.lineTo(cx,cy+12*dpr);ctx.stroke()}
+const evPt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/pscale,(e.clientY-r.top)/pscale]};
+cv.addEventListener("pointerdown",e=>{const p=evPt(e),keys=$("#refMode").value==="foto"?["a","b"]:["a","b","r1","r2"];let best=null,bd=1e9;
+  keys.forEach(k=>{const d=Math.hypot(L[k][0]-p[0],L[k][1]-p[1]);if(d<bd){bd=d;best=k}});
+  if(bd*pscale<44){drag=best;grabOff=[L[best][0]-p[0],L[best][1]-p[1]];cv.setPointerCapture(e.pointerId);draw();e.preventDefault()}});
+cv.addEventListener("pointermove",e=>{if(!drag)return;const p=evPt(e);
+  L[drag]=[Math.max(0,Math.min(photo.img.width,p[0]+grabOff[0])),Math.max(0,Math.min(photo.img.height,p[1]+grabOff[1]))];draw();computeAngle()});
+const endDrag=()=>{if(drag){drag=null;draw()}};cv.addEventListener("pointerup",endDrag);cv.addEventListener("pointercancel",endDrag);
+
+$("#evIn").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;loadImage(f,img=>{evid=img;$("#evTxt").textContent="Foto adjunta ✓"})};
+
+/* imagen de evidencia con rótulo */
+function burn(source,drawLines,label){
+  const iw=source.width,ih=source.height,MAX=1100,k=Math.min(1,MAX/Math.max(iw,ih)),w=Math.round(iw*k),h=Math.round(ih*k),bh=Math.max(36,Math.round(w*.06));
+  const c=document.createElement("canvas");c.width=w;c.height=h+bh;const g=c.getContext("2d");g.drawImage(source,0,0,w,h);
+  if(drawLines){const ln=(p,q,col)=>{g.lineWidth=Math.max(3,w/250);g.strokeStyle=col;g.beginPath();g.moveTo(p[0]*k,p[1]*k);g.lineTo(q[0]*k,q[1]*k);g.stroke();[p,q].forEach(x=>{g.beginPath();g.arc(x[0]*k,x[1]*k,Math.max(5,w/130),0,7);g.stroke()})};
+    if($("#refMode").value!=="foto")ln(L.r1,L.r2,"#fbbf24");ln(L.a,L.b,"#2dd4bf")}
+  g.fillStyle="#0f172a";g.fillRect(0,h,w,bh);g.fillStyle="#fff";g.font=`600 ${Math.round(bh*.42)}px -apple-system,Segoe UI,Roboto,Arial`;g.textBaseline="middle";
+  g.fillText(label,Math.round(bh*.3),h+bh/2,w-bh*.6);return c.toDataURL("image/jpeg",.72)}
+
+/* ================= guardar ================= */
+let saving=false;
+$("#btnGuardar").onclick=async()=>{
+  if(saving||!cur)return;
+  if(method==="sensor"&&!captured&&sensorOn&&smooth!=null){doCapture();computeAngle()}
+  if(angle==null)return;
+  saving=true;$("#btnGuardar").disabled=true;$("#btnGuardar").textContent="Guardando…";
+  try{
+    const m=curModel(),e=evalAng(angle,m.target,m.tol),maq=$("#maq").value.trim();
+    const label=`Máq. ${maq} · ${cur.label} · ${fmt(angle)}° · ${e.ok?"Cumple":"No cumple"} · ${dmy(today())}`;
+    let ph=null;
+    try{
+      if(method==="foto"&&photo)ph=burn(photo.img,true,label);
+      else if(evid)ph=burn(evid,false,label);
+      else if(method==="sensor"&&captured)ph=burn(captured.canvas,false,label);
+    }catch(err){ph=null}
+    const r={id:uid(),ts:Date.now(),date:today(),time:new Date().toTimeString().slice(0,5),plant:$("#planta").value.trim(),auditor:$("#auditor").value.trim(),
+      machine:maq,modelId:m.id,modelName:m.name,target:m.target,tol:m.tol,point:cur.point,dir:cur.dir,slot:cur.label,
+      angle:Math.round(angle*10)/10,dev:Math.round(e.dev*10)/10,status:e.ok?"ok":"bad",
+      method:method==="sensor"?(captured&&captured.mode==="edge"?"sensor-camara":"sensor"):method,note:$("#nota").value.trim(),photo:ph};
+    const where=await dbPut(r);
+    const back=await dbGet(r.id);
+    if(!back)throw new Error("no se pudo leer de vuelta");
+    toast((e.ok?"✓ Guardado · Cumple":"✓ Guardado · No cumple")+` (${e.score}/100)`+(where==="mem"?" · SOLO EN MEMORIA":""));
+    photo=null;$("#dz").hidden=false;$("#cvWrap").hidden=true;captured=null;evid=null;
+    await reload();updateStoreBanner();
+    const lat=latestBySlot(todayRecs()),next=slotsOf(m).find(s=>!lat.has(s.label));
+    if(next)openPanel(next);else{closePanel();const au=auditOf(todayRecs());toast(`Máquina ${maq} completa · ${au.score}/100 ${grade(au.score).t}`)}
+  }catch(err){
+    toast("✗ No se guardó: "+(err&&err.message?err.message:"error de almacenamiento"));
+  }finally{
+    saving=false;$("#btnGuardar").textContent="Guardar medición";computeAngle();
+  }
+};
+
+/* ================= RESUMEN ================= */
+function filtered(){const p=$("#rPlanta").value,mo=$("#rModelo").value;return recs.filter(r=>(!p||r.plant===p)&&(!mo||r.modelId===mo))}
+function fillResFilters(){
+  const ps=[...new Set(recs.map(r=>r.plant).filter(Boolean))].sort(),vp=$("#rPlanta").value,vm=$("#rModelo").value;
+  $("#rPlanta").innerHTML=`<option value="">Todas</option>`+ps.map(p=>`<option>${esc(p)}</option>`).join("");if(ps.includes(vp))$("#rPlanta").value=vp;
+  const ms=[...new Map(recs.map(r=>[r.modelId,r.modelName])).entries()];
+  $("#rModelo").innerHTML=`<option value="">Todos</option>`+ms.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");if(ms.some(x=>x[0]===vm))$("#rModelo").value=vm;
+}
+$("#rPlanta").onchange=renderRes;$("#rModelo").onchange=renderRes;
+function lastAudits(src){const out=[];auditsByMachine(src).forEach(arr=>out.push(arr[arr.length-1]));return out}
+function renderRes(){
+  fillResFilters();const src=filtered(),la=lastAudits(src),pend=pendings().open.filter(o=>src.includes(o.rec));
+  const avg=la.length?Math.round(la.reduce((s,a)=>s+a.score,0)/la.length):null;
+  const pts=la.flatMap(a=>a.latest),okp=pts.filter(r=>r.status==="ok").length;
+  const ga=grade(avg);
+  $("#kpis").innerHTML=`
+    <div class="kpi"><div class="n">${la.length}</div><div class="l">Máquinas</div></div>
+    <div class="kpi"><div class="n" style="color:${gradeColor(ga.c)}">${avg??"—"}</div><div class="l">Score prom.</div></div>
+    <div class="kpi"><div class="n">${pts.length?Math.round(okp/pts.length*100)+"%":"—"}</div><div class="l">Puntos OK</div></div>
+    <div class="kpi"><div class="n" style="color:${pend.length?"var(--bad)":"var(--fg)"}">${pend.length}</div><div class="l">Pendientes</div></div>`;
+  $("#scoreHelp").textContent=`Cada punto vale 100 si está dentro de la tolerancia. Por cada grado fuera se restan ${cfg.penalty} puntos (mínimo 0). La máquina recibe el promedio de sus puntos en la última auditoría; si tiene algún punto fuera, no pasa de 94. Escala: 95–100 Excelente · 85–94 Aceptable · 70–84 Revisar · menos de 70 Crítico.`;
+  const empty=`<p class="muted small" style="margin:0">Aún no hay auditorías. Mida al menos una máquina en la pestaña Medir.</p>`;
+  if(!la.length){$("#chScore").innerHTML=empty;$("#chDots").innerHTML=empty;return}
+  // barras de score
+  const rows=la.slice().sort((a,b)=>a.score-b.score||a.machine.localeCompare(b.machine,undefined,{numeric:true}));
+  const W=Math.max(300,$("#chScore").clientWidth||340),lw=78,rw=36,rh=30,H=rows.length*rh+30,x=v=>lw+(W-lw-rw)*v/100;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Puntuación por máquina">`;
+  [0,25,50,75,100].forEach(v=>{s+=`<line x1="${x(v)}" x2="${x(v)}" y1="0" y2="${H-22}" stroke="var(--line)"/><text x="${x(v)}" y="${H-6}" text-anchor="middle">${v}</text>`});
+  s+=`<line x1="${x(85)}" x2="${x(85)}" y1="0" y2="${H-22}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+  rows.forEach((a,i)=>{const y=i*rh+4,g=grade(a.score);
+    s+=`<g class="hit" data-k="${esc(a.key)}"><title>Máquina ${esc(a.machine)} · ${a.score}/100 · ${g.t} · ${dmy(a.date)}</title>
+      <rect class="hl" x="0" y="${y-2}" width="${W}" height="${rh}" fill="transparent" rx="6"/>
+      <text class="lbl" x="${lw-8}" y="${y+rh/2-2}" text-anchor="end" dominant-baseline="middle">Máq. ${esc(a.machine)}</text>
+      <rect x="${lw}" y="${y+5}" width="${Math.max(4,x(a.score)-lw)}" height="${rh-14}" rx="4" fill="${gradeColor(g.c)}"/>
+      <text class="val" x="${x(a.score)+6}" y="${y+rh/2-2}" dominant-baseline="middle">${a.score}</text></g>`});
+  $("#chScore").innerHTML=s+"</svg>";
+  $$("#chScore .hit").forEach(g=>g.onclick=()=>openDetail(g.dataset.k));
+  // diagrama de puntos
+  const angs=pts.map(r=>Math.abs(r.angle)),lo=Math.floor(Math.min(...angs,...la.map(a=>{const r=a.latest[0];return r.target-r.tol}))-2),
+        hi=Math.ceil(Math.max(...angs,...la.map(a=>{const r=a.latest[0];return r.target+r.tol}))+2);
+  const W2=Math.max(300,$("#chDots").clientWidth||340),rh2=30,H2=rows.length*rh2+30,X=v=>lw+(W2-lw-14)*(v-lo)/(hi-lo||1);
+  let s2=`<svg viewBox="0 0 ${W2} ${H2}" role="img" aria-label="Ángulos medidos por máquina">`;
+  const step=(hi-lo)>20?5:(hi-lo)>8?2:1;
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step){s2+=`<line x1="${X(v)}" x2="${X(v)}" y1="0" y2="${H2-22}" stroke="var(--line)"/><text x="${X(v)}" y="${H2-6}" text-anchor="middle">${v}°</text>`}
+  const ring2=css("--card")||"#16213a";
+  rows.forEach((a,i)=>{const y=i*rh2+4,r0=a.latest[0];
+    s2+=`<g class="hit" data-k="${esc(a.key)}"><rect class="hl" x="0" y="${y-2}" width="${W2}" height="${rh2}" fill="transparent" rx="6"/>
+      <text class="lbl" x="${lw-8}" y="${y+rh2/2-2}" text-anchor="end" dominant-baseline="middle">Máq. ${esc(a.machine)}</text>
+      <rect x="${X(r0.target-r0.tol)}" y="${y+4}" width="${X(r0.target+r0.tol)-X(r0.target-r0.tol)}" height="${rh2-12}" rx="4" fill="var(--okbg)"/>
+      <line x1="${X(r0.target)}" x2="${X(r0.target)}" y1="${y+4}" y2="${y+rh2-8}" stroke="var(--ok)" stroke-width="1.5"/>`;
+    a.latest.forEach(r=>{const col=r.status==="ok"?"var(--ok)":"var(--bad)",cxp=X(Math.abs(r.angle)),hollow=r.dir==="Volteo B";
+      s2+=`<circle cx="${cxp}" cy="${y+rh2/2-2}" r="5.5" fill="${hollow?"var(--solid)":col}" stroke="${hollow?col:"var(--solid)"}" stroke-width="2"><title>${esc(r.slot)}: ${fmt(r.angle)}°</title></circle>`});
+    s2+=`</g>`});
+  $("#chDots").innerHTML=s2+"</svg>";
+  $$("#chDots .hit").forEach(g=>g.onclick=()=>openDetail(g.dataset.k));
+}
+
+/* ================= DETALLE DE MÁQUINA ================= */
+function openDetail(k){
+  const list=recs.filter(r=>mkey(r).toLowerCase()===k.toLowerCase());if(!list.length){toast("Sin mediciones para esa máquina");return}
+  const aud=auditsByMachine(list).values().next().value,last=aud[aud.length-1],g=grade(last.score),r0=list[0];
+  $("#detail").hidden=false;
+  $("#dEyebrow").textContent=`${r0.plant||"Planta"} · ${r0.modelName}`;$("#dTitle").textContent="Máquina "+r0.machine;
+  let h=`<div class="card"><div class="scorebox">${ring(last.score,84)}<div class="t"><span class="pill ${g.c}">${g.t}</span>
+    <span class="small muted">Última auditoría ${dmy(last.date)} · ${last.measured}${last.expected?" de "+last.expected:""} puntos · ${last.fails} fuera</span></div></div></div>`;
+  // historial de score
+  if(aud.length>1){const W=Math.max(300,Math.min(700,document.querySelector("#detail .wrap").clientWidth-34)),H=170,pl=30,pr=14,pt=12,pb=26,
+      X=i=>pl+(W-pl-pr)*(aud.length===1?0.5:i/(aud.length-1)),Y=v=>pt+(H-pt-pb)*(1-v/100);
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de puntuación">`;
+    [0,50,85,100].forEach(v=>s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" ${v===85?'stroke-dasharray="4 4"':""}/><text x="${pl-6}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle">${v}</text>`);
+    const path=aud.map((a,i)=>`${i?"L":"M"}${X(i)},${Y(a.score)}`).join("");
+    s+=`<path d="${path} L${X(aud.length-1)},${Y(0)} L${X(0)},${Y(0)} Z" fill="var(--accent)" opacity=".12"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+    aud.forEach((a,i)=>{const gg=grade(a.score),last=i===aud.length-1;s+=`<circle cx="${X(i)}" cy="${Y(a.score)}" r="${last?6:4}" fill="${gradeColor(gg.c)}" stroke="var(--solid)" stroke-width="2"><title>${dmy(a.date)}: ${a.score}</title></circle>`;
+      if(aud.length<=8||i===0||last)s+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${a.date.slice(8)}/${a.date.slice(5,7)}</text>`});
+    s+=`<text class="val" x="${X(aud.length-1)}" y="${Y(last.score)-12}" text-anchor="middle">${last.score}</text>`;
+    h+=`<div class="card"><h2 style="margin-bottom:8px">Puntuación en el tiempo</h2><div class="chart">${s}</svg></div></div>`}
+  // puntos de la última auditoría
+  const mdl=modelById(r0.modelId),order=mdl?slotsOf(mdl).map(s=>s.label):[];
+  const lat=last.latest.slice().sort((a,b)=>(order.indexOf(a.slot)-order.indexOf(b.slot))||a.slot.localeCompare(b.slot));
+  h+=`<div class="card"><h2 style="margin-bottom:8px">Puntos · ${dmy(last.date)}</h2><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Punto</th><th style="text-align:right">Ángulo</th><th style="text-align:right">Desv.</th><th style="text-align:right">Pts</th></tr></thead><tbody>`+
+    lat.map(r=>`<tr><td>${esc(r.slot)}</td><td class="n" style="color:${r.status==="ok"?"var(--ok)":"var(--bad)"}">${fmt(r.angle)}°</td><td class="n">${fmt(r.dev)}°</td><td class="n">${recScore(r)}</td></tr>`).join("")+`</tbody></table></div>`;
+  // simetría A/B
+  if(lat.some(r=>r.dir)){const pts=[...new Set(lat.map(r=>r.point))];const sym=pts.map(p=>{const A=lat.find(r=>r.point===p&&r.dir==="Volteo A"),B=lat.find(r=>r.point===p&&r.dir==="Volteo B");return A&&B?{p,d:Math.abs(Math.abs(A.angle)-Math.abs(B.angle))}:null}).filter(Boolean);
+    if(sym.length)h+=`<p class="small muted" style="margin:10px 0 0">Diferencia entre Volteo A y B: `+sym.map(x=>`${esc(x.p)} ${fmt(x.d)}°`).join(" · ")+`. Una diferencia grande indica topes desiguales.</p>`}
+  h+=`</div>`;
+  // fotos
+  const withPh=list.filter(r=>r.photo).slice(0,24);
+  if(withPh.length)h+=`<div class="card"><h2 style="margin-bottom:10px">Fotos</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px">`+
+    withPh.map(r=>`<img src="${r.photo}" data-v alt="${esc(r.slot)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer;border:1px solid var(--line)">`).join("")+`</div></div>`;
+  $("#dBody").innerHTML=h;$("#detail").hidden=false;$("#detail").scrollTop=0;
+  $$("#dBody img[data-v]").forEach(i=>i.onclick=()=>openViewer(i.src));
+}
+$("#dClose").onclick=()=>$("#detail").hidden=true;
+
+/* ================= PENDIENTES ================= */
+function renderBadge(){const n=pendings().open.filter(o=>!o.notified).length;$("#pendBadge").hidden=!n;$("#pendBadge").textContent=n}
+function buildMsg(items){
+  if(!items.length)return"";const by=new Map();items.forEach(o=>{(by.get(o.mk)||by.set(o.mk,[]).get(o.mk)).push(o)});
+  const auds=auditsByMachine(recs);const plant=items[0].rec.plant||cfg.planta||"";
+  let t=`🔧 *Ajuste de ángulo de volteo*\n${plant} · ${dmy(today())}\n${items.length} punto(s) fuera de rango\n`;
+  by.forEach((arr,k)=>{const r0=arr[0].rec,a=auds.get(k),sc=a?a[a.length-1].score:null;
+    t+=`\n*Máquina ${r0.machine}* (${r0.modelName})${sc!=null?" · score "+sc:""}\n`;
+    arr.forEach(o=>{const r=o.rec;t+=`• ${r.slot}: ${fmt(Math.abs(r.angle))}° (debe ser ${fmt(r.target)}° ±${fmt(r.tol)}°) → ${Math.abs(r.angle)<r.target?"aumentar":"reducir"} ${fmt(r.dev)}°\n`})});
+  t+=`\nFavor confirmar cuando esté corregido para volver a medir.`;return t}
+let msgItems=[];
+function renderPend(){
+  const {open,fixed}=pendings();
+  $("#pendSub").textContent=open.length?`${open.length} punto(s) fuera · ${open.filter(o=>!o.notified).length} sin notificar`:"Sin pendientes";
+  if(!open.length)$("#pendList").innerHTML=`<p class="muted small" style="margin:0">Todo en orden. Cuando un punto quede fuera de rango aparecerá aquí, y saldrá solo cuando una nueva medición cumpla.</p>`;
+  else{const by=new Map();open.forEach(o=>{(by.get(o.mk)||by.set(o.mk,[]).get(o.mk)).push(o)});
+    $("#pendList").innerHTML=[...by.values()].map(arr=>{const r0=arr[0].rec;
+      return `<div class="group"><div class="row" style="justify-content:space-between"><div><b>Máquina ${esc(r0.machine)}</b> <span class="small muted">· ${esc(r0.modelName)}</span></div>
+        <button class="btn ghost xs" data-k="${esc(arr[0].mk)}">Ver máquina</button></div><div class="recs">`+
+        arr.map(o=>{const r=o.rec;return `<div class="rec">${r.photo?`<img src="${r.photo}" data-v alt="">`:`<div class="noimg"></div>`}
+          <div class="meta"><b>${esc(r.slot)}</b><div>${fmt(Math.abs(r.angle))}° · objetivo ${fmt(r.target)}° ±${fmt(r.tol)}° · desde ${dmy(new Date(o.since).toISOString().slice(0,10))}</div></div>
+          <div style="text-align:right"><div class="ang" style="color:var(--bad)">${fmt(r.dev)}°</div>
+          <span class="pill ${o.notified?"warn":"bad"}">${o.notified?"Notificado "+new Date(o.notifiedAt).toLocaleDateString("es-HN",{day:"numeric",month:"short"}):"Sin notificar"}</span></div></div>`}).join("")+`</div></div>`}).join("");
+    $$("#pendList [data-k]").forEach(b=>b.onclick=()=>openDetail(b.dataset.k));
+    $$("#pendList img[data-v]").forEach(i=>i.onclick=()=>openViewer(i.src));}
+  msgItems=$("#chkSoloNuevos").checked?open.filter(o=>!o.notified):open;
+  const txt=buildMsg(msgItems);$("#msgTxt").textContent=txt||"No hay puntos para notificar.";
+  $("#msgCard").querySelectorAll("button,a").forEach(b=>{b.classList.toggle("disabled",!txt);if(b.tagName==="BUTTON")b.disabled=!txt});
+  $("#btnWA").href=txt?"https://wa.me/?text="+encodeURIComponent(txt):"#";
+  $("#fixedList").innerHTML=fixed.length?`<div class="recs">`+fixed.map(f=>`<div class="rec"><div class="noimg" style="display:flex;align-items:center;justify-content:center;color:var(--ok);font-size:20px">✓</div>
+    <div class="meta"><b>Máq. ${esc(f.rec.machine)} · ${esc(f.rec.slot)}</b><div>De ${fmt(Math.abs(f.prev.angle))}° a ${fmt(Math.abs(f.rec.angle))}° · verificado ${dmy(f.rec.date)}</div></div>
+    <span class="pill ok">Corregido</span></div>`).join("")+`</div>`:`<p class="muted small" style="margin:0">Todavía no hay correcciones verificadas.</p>`;
+}
+$("#chkSoloNuevos").onchange=renderPend;
+$("#btnCopiar").onclick=async()=>{const t=$("#msgTxt").textContent;try{await navigator.clipboard.writeText(t);toast("Mensaje copiado")}catch(e){const r=document.createRange();r.selectNodeContents($("#msgTxt"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Texto seleccionado: cópielo")}};
+$("#btnShare").onclick=async()=>{const t=$("#msgTxt").textContent;if(navigator.share){try{await navigator.share({title:"Ajuste de ángulo de volteo",text:t})}catch(e){}}else toast("Compartir no está disponible; use Copiar o WhatsApp")};
+$("#btnWA").addEventListener("click",e=>{if(!msgItems.length)e.preventDefault()});
+$("#btnNotif").onclick=()=>{const now=Date.now();msgItems.forEach(o=>{cfg.tasks[o.key]={notifiedAt:now}});saveCfg();renderAll();toast(`${msgItems.length} punto(s) marcados como notificados`)};
+
+/* ================= REGISTROS ================= */
+function renderReg(){
+  const q=$("#filtro").value.trim().toLowerCase(),fe=$("#fEstado").value;
+  const list=recs.filter(r=>(!fe||r.status===fe)&&(!q||[r.machine,r.slot,r.auditor,r.modelName,dmy(r.date),r.note,r.plant,r.method].join(" ").toLowerCase().includes(q)));
+  $("#regCount").textContent=`${list.length} de ${recs.length} mediciones · se conserva todo el historial; las mediciones repetidas aparecen atenuadas.`;
+  if(!list.length){$("#lista").innerHTML=`<p class="muted" style="margin:0">${recs.length?"Ningún registro coincide con el filtro.":"Aún no hay mediciones. En Medir escriba el número de máquina y toque un punto."}</p>`;return}
+  const latestIds=new Set();auditsByMachine(recs).forEach(arr=>arr.forEach(a=>a.latest.forEach(r=>latestIds.add(r.id))));
+  const groups=new Map();list.forEach(r=>{const k=r.date+"|"+mkey(r);(groups.get(k)||groups.set(k,[]).get(k)).push(r)});
+  $("#lista").innerHTML=[...groups.values()].map(g=>{const r0=g[0],au=auditOf(recs.filter(r=>r.date===r0.date&&mkey(r)===mkey(r0))),gr=grade(au.score);
+    return `<div class="group"><div class="row" style="justify-content:space-between"><div><b>Máquina ${esc(r0.machine)}</b> <span class="muted small">· ${esc(r0.modelName)} · ${dmy(r0.date)}</span></div>
+      <span class="pill ${gr.c}">${au.score}/100 · ${gr.t}</span></div><div class="recs">`+
+      g.sort((a,b)=>a.slot.localeCompare(b.slot)||b.ts-a.ts).map(r=>`<div class="rec ${latestIds.has(r.id)?"":"old"}">
+        ${r.photo?`<img src="${r.photo}" alt="Foto ${esc(r.slot)}" data-v>`:`<div class="noimg"></div>`}
+        <div class="meta"><b>${esc(r.slot)}</b><div>${esc(r.time)} · ${({foto:"Foto",sensor:"Sensor apoyado","sensor-camara":"Sensor + cámara",manual:"Manual"})[r.method]||r.method}${latestIds.has(r.id)?"":" · repetida"}${r.auditor?" · "+esc(r.auditor):""}${r.note?" · "+esc(r.note):""}</div></div>
+        <div><div class="ang" style="color:${r.status==="ok"?"var(--ok)":"var(--bad)"}">${fmt(r.angle)}°</div>
+        <div style="text-align:right;margin-top:4px"><button class="btn ghost xs" data-del="${r.id}">Borrar</button></div></div></div>`).join("")+`</div></div>`}).join("");
+  $$("#lista img[data-v]").forEach(i=>i.onclick=()=>openViewer(i.src));
+  $$("#lista [data-del]").forEach(b=>b.onclick=()=>{const box=b.parentElement;box.innerHTML=`<button class="btn danger xs">Confirmar</button>`;
+    box.firstChild.onclick=async()=>{await dbDel(b.dataset.del);await reload();toast("Medición borrada")}});
+}
+$("#filtro").oninput=renderReg;$("#fEstado").onchange=renderReg;
+function openViewer(src){$("#viewerImg").src=src;$("#viewer").hidden=false}
+$("#viewerClose").onclick=()=>$("#viewer").hidden=true;$("#viewer").onclick=e=>{if(e.target.id==="viewer")$("#viewer").hidden=true};
+function download(name,text,type){const blob=new Blob([text],{type}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+$("#btnCSV").onclick=()=>{
+  if(!recs.length){toast("No hay registros");return}
+  const latestIds=new Set();auditsByMachine(recs).forEach(arr=>arr.forEach(a=>a.latest.forEach(r=>latestIds.add(r.id))));
+  const cols=["Fecha","Hora","Planta","Auditor","Máquina","Modelo","Punto","Sentido","Ángulo (°)","Objetivo (°)","Tolerancia (°)","Desviación (°)","Puntos","Estado","Vigente","Método","Observación"];
+  const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const rows=recs.slice().sort((a,b)=>a.ts-b.ts).map(r=>[dmy(r.date),r.time,r.plant,r.auditor,r.machine,r.modelName,r.point,r.dir,r.angle,r.target,r.tol,r.dev,recScore(r),r.status==="ok"?"Cumple":"No cumple",latestIds.has(r.id)?"Sí":"No (repetida)",r.method,r.note].map(q).join(","));
+  download(`auditoria_volteo_${today()}.csv`,"﻿"+cols.join(",")+"\n"+rows.join("\n"),"text/csv;charset=utf-8")};
+$("#btnBackup").onclick=()=>download(`respaldo_volteo_${today()}.json`,JSON.stringify({v:2,cfg,recs}),"application/json");
+$("#impIn").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const fr=new FileReader();
+  fr.onload=async()=>{try{const d=JSON.parse(fr.result);if(!Array.isArray(d.recs))throw 0;for(const r of d.recs)if(r&&r.id)await dbPut(r);
+    if(d.cfg&&Array.isArray(d.cfg.models))d.cfg.models.forEach(m=>{if(!modelById(m.id))cfg.models.push({bidir:false,...m})});
+    if(d.cfg&&d.cfg.tasks)Object.assign(cfg.tasks,d.cfg.tasks);saveCfg();fillModelSelect();await reload();toast(`${d.recs.length} mediciones importadas`)}
+    catch(err){toast("El archivo no es un respaldo válido")}};fr.readAsText(f)};
+
+/* ================= AJUSTES ================= */
+function diagRows(){return[
+  ["Abierta desde enlace seguro (https)",window.isSecureContext?"Sí":"No · archivo",window.isSecureContext],
+  ["Guardado permanente",idbOK===false?"No · solo memoria":idbOK?"Sí":"Probando…",idbOK!==false],
+  ["Sensor de inclinación",evtCount?"Recibe datos":(sensorOn||calOn)?"Sin datos":"Toque «Leer sensor»",!!evtCount||!(sensorOn||calOn)],
+  ["Cámara",navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.isSecureContext?"Disponible":"No disponible",!!(navigator.mediaDevices&&window.isSecureContext)]]}
+function renderAj(){
+  $("#penalty").value=cfg.penalty;
+  $("#calTxt").textContent=`Corrección actual · Apoyado: ${fmt(cfg.zeroFlat||0,2)}° · Cámara: ${fmt(cfg.zero||0,2)}°`;
+  $("#diag").innerHTML=diagRows().map(([k,v,ok])=>`<tr><td>${k}</td><td style="text-align:right"><span class="pill ${ok?"ok":"bad"}">${v}</span></td></tr>`).join("");
+  const used=recs.reduce((s,r)=>s+(r.photo?r.photo.length:0),0)/1048576;
+  $("#storeTxt").textContent=`${recs.length} mediciones${idbOK===false?" (EN MEMORIA, NO GUARDADAS)":" guardadas"} (~${fmt(used,1)} MB de fotos). Los datos viven en este teléfono: haga un «Respaldo completo» en Registros cada semana.`+(navigator.storage&&navigator.storage.persist?"":" ");
+  renderModels();
+}
+$("#penalty").onchange=()=>{const v=parseFloat($("#penalty").value);if(v>0){cfg.penalty=v;saveCfg();renderAll()}};
+function renderModels(){
+  $("#modelos").innerHTML=cfg.models.map((m,i)=>`
+    <div class="modelc" data-i="${i}">
+      <label class="f">Nombre<input data-k="name" value="${esc(m.name)}"></label>
+      <div class="grid2">
+        <label class="f">Ángulo objetivo (°)<input data-k="target" type="number" step="0.5" inputmode="decimal" value="${m.target}"></label>
+        <label class="f">Tolerancia (±°)<input data-k="tol" type="number" step="0.5" inputmode="decimal" value="${m.tol}"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-bidir ${m.bidir?"checked":""}> Medir ambos sentidos de volteo (A y B)</label>
+      <div class="f" style="font-size:12px;color:var(--muted);font-weight:600">Puntos de medición (${slotsOf(m).length} lecturas por máquina)</div>
+      <div class="chips">${m.points.map((p,j)=>`<span class="chip">${esc(p)}<button data-rm="${j}" aria-label="Quitar ${esc(p)}">×</button></span>`).join("")}</div>
+      <div class="grid3">
+        <select data-lado aria-label="Lado"><option value="">Lado…</option><option>Izquierdo</option><option>Derecho</option><option>Centro</option></select>
+        <select data-pos aria-label="Posición"><option value="">Posición…</option><option>Adelante</option><option>Atrás</option><option>Medio</option><option>Arriba</option><option>Abajo</option><option>Carro 1</option><option>Carro 2</option><option>Carro 3</option></select>
+        <button class="btn ghost sm" data-addp>Agregar</button>
+      </div>
+      ${cfg.models.length>1?`<div class="row" style="justify-content:flex-end"><span class="row" data-delbox><button class="btn danger sm" data-delm>Eliminar modelo</button></span></div>`:""}
+    </div>`).join("");
+  $$("#modelos .modelc").forEach(box=>{const m=cfg.models[+box.dataset.i];
+    box.querySelectorAll("input[data-k]").forEach(inp=>inp.onchange=()=>{const k=inp.dataset.k;m[k]=k==="name"?(inp.value.trim()||m.name):Math.abs(parseFloat(inp.value)||0);saveCfg();fillModelSelect();renderSlots()});
+    box.querySelector("[data-bidir]").onchange=e=>{m.bidir=e.target.checked;saveCfg();renderModels();renderSlots()};
+    box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{if(m.points.length<=1){toast("Debe quedar al menos un punto");return}m.points.splice(+b.dataset.rm,1);saveCfg();renderModels();renderSlots()});
+    box.querySelector("[data-addp]").onclick=()=>{const p=[box.querySelector("[data-lado]").value,box.querySelector("[data-pos]").value].filter(Boolean).join(" · ");
+      if(!p){toast("Elija lado y/o posición");return}if(m.points.includes(p)){toast("Ese punto ya existe");return}m.points.push(p);saveCfg();renderModels();renderSlots()};
+    const dm=box.querySelector("[data-delm]");if(dm)dm.onclick=()=>{const c=box.querySelector("[data-delbox]");c.innerHTML=`<span class="small muted">¿Eliminar este modelo?</span><button class="btn danger sm">Sí, eliminar</button>`;
+      c.querySelector("button").onclick=()=>{cfg.models.splice(+box.dataset.i,1);saveCfg();fillModelSelect();renderModels();renderSlots()}};
+  });
+}
+$("#btnAddModelo").onclick=()=>{cfg.models.push({id:uid(),name:"Nuevo modelo",target:45,tol:2,bidir:true,points:["Izquierdo · Adelante","Derecho · Adelante"]});saveCfg();fillModelSelect();renderModels()};
+/* calibración: usa el mismo sensor, sin la corrección */
+let calOn=false,calRaf=0,calPrevMode=null;
+async function startCal(){calPrevMode=smode;smode=$("#calMode").value;calOn=true;smooth=null;hist=[];
+  if(!(await startSensors())){calOn=false;smode=calPrevMode;$("#calTxt").innerHTML=$("#sensorMsg").innerHTML||"No se pudo leer el sensor.";return}
+  $("#btnCal").disabled=false;
+  const tick=()=>{if(!calOn)return;$("#calLive").innerHTML=(smooth==null?"—":fmt(smooth,2))+"<small>°</small>";calRaf=requestAnimationFrame(tick)};tick()}
+function stopCal(){if(calOn){calOn=false;cancelAnimationFrame(calRaf);stopSensor();smode=calPrevMode||smode;smooth=null;hist=[];$("#btnCal").disabled=true}}
+$("#btnCalStart").onclick=()=>{if(!calOn)startCal()};
+$("#calMode").onchange=()=>{if(calOn){smode=$("#calMode").value;smooth=null;hist=[]}};
+$("#btnCal").onclick=()=>{if(smooth==null){toast("Sin lectura");return}if(!stable()){toast("Espere a que la lectura esté quieta");return}
+  const z=smooth,md=$("#calMode").value;if(Math.abs(z)>8){toast("Más de 8°: la superficie no parece nivelada");return}
+  if(md==="flat")cfg.zeroFlat=z;else cfg.zero=z;saveCfg();stopCal();renderAj();toast(`Calibrado (${md==="flat"?"apoyado":"cámara"}: ${fmt(z,2)}°)`)};
+$("#btnCalReset").onclick=()=>{stopCal();cfg.zero=0;cfg.zeroFlat=0;saveCfg();renderAj();toast("Calibración eliminada")};
+
+/* ================= inicio ================= */
+document.addEventListener("visibilitychange",()=>{if(document.hidden){stopSensor();stopCal();captured=null;if(!$("#sensorArea").hidden){resetSensorUI();computeAngle()}}});
+fillModelSelect();renderSlots();
+storageProbe().then(()=>reload()).then(()=>{checkEnv();updateStoreBanner();if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})});
+if("serviceWorker" in navigator&&window.isSecureContext)navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+</body>
+</html>
